@@ -56,7 +56,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
-env = Env.read_env()
+env = Env()
+env.read_env()
+env.read_env('.env.local')
 
 app = ApplicationBuilder().token(env("TELEGRAM_AUTH_TOKEN")).build()
 

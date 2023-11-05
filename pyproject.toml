@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pp2-util-bot"
-version = "0.1.0"
+version = "0.1.1"
 description = "Utility-service Telegram Bot for Parque dos Passaros 2 Residential Condominium"
 authors = ["Kevin Mian Kraiker <kevin.mian@gmail.com>"]
 license = "GNU Affero General Public License v3.0"
