@@ -22,5 +22,6 @@ ENV VIRTUAL_ENV=/app/.venv \
 COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 COPY pp2_util_bot ./pp2_util_bot
+COPY templates ./templates
 
 ENTRYPOINT ["python", "-m", "pp2_util_bot.main"]
