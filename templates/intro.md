@@ -17,7 +17,7 @@ Interfones úteis:
 
 E a seguir, alguns contatos úteis \(que também atendem via WhatsApp\)
 	Administração:
-		[\(11\) 9\-9218\-3312](tel:+5511992183312) (disponível também no WhatsApp)
+		[\(11\) 9\-9218\-3312](tel:+5511992183312)
 	Zeladoria:
 		[\(11\) 9\-7513\-4719](tel:+5511975134719)
 
