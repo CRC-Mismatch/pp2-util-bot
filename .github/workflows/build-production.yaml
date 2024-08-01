@@ -55,14 +55,12 @@ jobs:
         uses: docker/build-push-action@v5
         id: build
         with:
-          context: .
-          outputs: type=image,name=${{ vars.DOCKERHUB_IMAGE }},push-by-digest=true,name-canonical=true,push=true
-          platforms: ${{ matrix.platform }}
           target: runtime
+          platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          outputs: type=image,name=${{ vars.DOCKERHUB_IMAGE }},push-by-digest=true,name-canonical=true,push=true
 
       - name: 'Export image digest'
         run: |
@@ -107,7 +105,7 @@ jobs:
         env:
           DOCKER_METADATA_OUTPUT_JSON: ${{ needs.build-image.outputs.webserver_meta_json }}
         run: |
-          tags=$(jq -cer '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") || { echo "Failed processing Webserver image metadata"; exit 1; }
+          tags=$(jq -cer '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") || { echo "Failed processing image metadata"; exit 1; }
           docker buildx imagetools create $tags \
             $(printf '${{ vars.DOCKERHUB_IMAGE }}@sha256:%s ' *)
 
