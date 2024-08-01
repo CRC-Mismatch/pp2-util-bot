@@ -19,41 +19,19 @@ def send_action(action: ChatAction):
 
 @send_action(ChatAction.TYPING)
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_markdown_v2(
-        f'*Olá, {update.effective_user.first_name}\\!*\n'
-        '\n'
-        'Tenho algumas informações para te ajudar como morador no Parque dos Passaros 2\\!\n'
-        'Interfones úteis:\n'
-        '\tPortaria:\n'
-        '\t\t*`100`*\n'
-        '\t\t*`94`*\n'
-        '\tUtilidades:\n'
-        '\t\tSedex/Entregas/"Base 3":\n'
-        '\t\t\t*`203`*\n'
-        '\tPara ligar para algum apartamento,\n'
-        '\t\tdigite o número do bloco seguido\n'
-        '\t\tdo número do apartamento, exemplos:\n'
-        '\t\t\t*`1 107`* \\(apto 107 do bloco 1\\)\n'
-        '\t\t\t*`3 37`* \\(apto 37 do bloco 3\\)\n'
-        '\n'
-        'E a seguir, alguns contatos úteis \\(que também atendem via WhatsApp\\)\n'
-        '\tAdministração:\n'
-        '\t\t[\\(11\\) 9\\-9218\\-3312](tel:+5511992183312)\n'
-        '\tZeladoria:\n'
-        '\t\t[\\(11\\) 9\\-7513\\-4719](tel:+5511975134719)\n'
-        '\n'
-        'Se tiver qualquer problema, por favor, nos informe\\!',
-    )
-    await update.message.reply_contact(
-        phone_number='+5511992183312',
-        first_name='Administração',
-        last_name='Parque dos Pássaros 2',
-    )
-    await update.message.reply_contact(
-        phone_number='+5511975134719',
-        first_name='Zeladoria',
-        last_name='Parque dos Pássaros 2',
-    )
+    with open('../templates/intro.md', 'r') as introFD:
+        intro = introFD.read().format(first_name=update.effective_user.first_name)
+        await update.message.reply_markdown_v2(intro)
+        await update.message.reply_contact(
+            phone_number='+5511992183312',
+            first_name='Administração',
+            last_name='Parque dos Pássaros 2',
+        )
+        await update.message.reply_contact(
+            phone_number='+5511975134719',
+            first_name='Zeladoria',
+            last_name='Parque dos Pássaros 2',
+        )
 
 
 env = Env()
