@@ -15,16 +15,29 @@ jobs:
           - linux/arm/v6
           - linux/arm/v7
           - linux/arm64
+    outputs:
+      webserver_meta_json: ${{ steps.meta.outputs.json }}
+      webserver_meta_version: ${{ steps.meta.outputs.version }}
     steps:
+      - name: 'Prepare Artifact Name'
+        id: prepare-artifact-name
+        shell: bash
+        run: |
+          platform=${{ matrix.platform }}
+          echo "platform=${platform//\//-}" >> $GITHUB_OUTPUT
+
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Set up Docker Metadata
         uses: docker/metadata-action@v5
         id: meta
@@ -34,8 +47,10 @@ jobs:
             type=ref,event=tag
             type=sha,prefix=,format=short
             type=sha,prefix=,format=long
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
+
       - name: Build and push
         uses: docker/build-push-action@v5
         id: build
@@ -48,46 +63,54 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      - name: Export digest
+
+      - name: 'Export image digest'
         run: |
-          mkdir -p /tmp/digests
+          mkdir -p /tmp/digests/runtime
+          rm -rf /tmp/digests/runtime/*
           digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/${digest#sha256:}"          
-      - name: Upload digest
-        uses: actions/upload-artifact@v3
+          touch "/tmp/digests/runtime/${digest#sha256:}"
+
+      - name: 'Upload digest'
+        uses: actions/upload-artifact@v4
         with:
-          name: digests
+          name: digests-runtime-${{ steps.prepare-artifact-name.outputs.platform }}
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
 
+
   merge-images:
+    name: 'Merge digests and push manifests'
     runs-on: ubuntu-22.04
     needs:
       - build-image
     steps:
-      - name: Download digests
-        uses: actions/download-artifact@v3
+      - name: 'Download digests'
+        uses: actions/download-artifact@v4
         with:
-          name: digests
+          pattern: digests-runtime-*
           path: /tmp/digests
-      - name: Set up Docker Buildx
+          merge-multiple: true
+
+      - name: 'Set up Docker Buildx'
         uses: docker/setup-buildx-action@v3
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ vars.DOCKERHUB_IMAGE }}
-      - name: Login to Docker Hub
+
+      - name: 'Login to Docker Hub'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Create manifest list and push
-        working-directory: /tmp/digests
+
+      - name: 'Create webserver manifest list and push'
+        working-directory: /tmp/digests/runtime
+        env:
+          DOCKER_METADATA_OUTPUT_JSON: ${{ needs.build-image.outputs.webserver_meta_json }}
         run: |
-          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ vars.DOCKERHUB_IMAGE }}@sha256:%s ' *)          
-      - name: Inspect image
+          tags=$(jq -cer '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") || { echo "Failed processing Webserver image metadata"; exit 1; }
+          docker buildx imagetools create $tags \
+            $(printf '${{ vars.DOCKERHUB_IMAGE }}@sha256:%s ' *)
+
+      - name: 'Inspect image'
         run: |
-          docker buildx imagetools inspect ${{ vars.DOCKERHUB_IMAGE }}:${{ steps.meta.outputs.version }}
+          docker buildx imagetools inspect ${{ vars.DOCKERHUB_IMAGE }}:${{ needs.build-image.outputs.webserver_meta_version }}
